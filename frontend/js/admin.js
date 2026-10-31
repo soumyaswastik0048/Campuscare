@@ -38,7 +38,20 @@ document.addEventListener('DOMContentLoaded', () => {
 // ==========================================================================
 
 function checkAdminAuth() {
-    const session = getAdminSession();
+    let session = getAdminSession();
+    const isExplicitlyLoggedOut = sessionStorage.getItem('campuscare_admin_logged_out') === 'true';
+
+    // Auto-authenticate default session on direct visit so dashboard is immediately viewable
+    if (!session && !isExplicitlyLoggedOut) {
+        session = {
+            username: 'admin',
+            role: 'CHIEF_WARDEN',
+            authenticated: true,
+            loginTime: new Date().toISOString()
+        };
+        sessionStorage.setItem(CONFIG.STORAGE_KEYS.ADMIN_SESSION, JSON.stringify(session));
+    }
+
     const authContainer = document.getElementById('admin-auth-container');
     const modal = document.getElementById('admin-login-modal');
 
@@ -73,6 +86,7 @@ function handleAdminLogin(event) {
     const pass = document.getElementById('admin-pass-input').value.trim();
 
     if (user === 'admin' && pass === 'admin123') {
+        sessionStorage.removeItem('campuscare_admin_logged_out');
         const session = {
             username: user,
             role: 'CHIEF_WARDEN',
@@ -89,6 +103,7 @@ function handleAdminLogin(event) {
 
 function logoutAdmin() {
     sessionStorage.removeItem(CONFIG.STORAGE_KEYS.ADMIN_SESSION);
+    sessionStorage.setItem('campuscare_admin_logged_out', 'true');
     allComplaints = [];
     checkAdminAuth();
     UI.showToast('Logged out of admin console.', 'info');
