@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="CampusCare Student Portal - Anonymous Complaint Submission and Real-Time Tracking">
+    <title>CampusCare | Student Portal</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <!-- CSS -->
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/student.css">
+</head>
+<body>
+
+    <!-- Header Navigation -->
+    <header class="header-nav">
+        <div class="nav-container">
+            <a href="index.html" class="brand-logo">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                    <path d="M9 12l2 2 4-4"/>
+                </svg>
+                <span>CampusCare</span>
+                <span class="brand-badge">Student Desk</span>
+            </a>
+
+            <div class="nav-cta">
+                <div id="student-auth-status" style="display: flex; align-items: center; gap: 0.75rem;">
+                    <!-- Populated dynamically: Verified badge or Login button -->
+                </div>
+                <a href="index.html" class="btn btn-secondary btn-sm">&larr; Home</a>
+                <a href="admin.html" class="btn btn-outline btn-sm">Admin Portal</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Student Portal Layout -->
+    <main class="student-layout">
+        <!-- Sidebar Navigation -->
+        <aside class="student-sidebar">
+            <div class="student-profile-card">
+                <div class="student-avatar" id="avatar-initials">ST</div>
+                <div class="student-info">
+                    <h4 id="sidebar-student-name">Verified Student</h4>
+                    <small id="sidebar-student-email">Anonymous Session</small>
+                </div>
+            </div>
+
+            <ul class="nav-tabs-list">
+                <li class="nav-tab-item active" data-tab="tab-submit" id="nav-tab-submit">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="5" x2="12" y2="19"/>
+                        <line x1="5" y1="12" x2="19" y2="12"/>
+                    </svg>
+                    <span>Submit Complaint</span>
+                </li>
+
+                <li class="nav-tab-item" data-tab="tab-track" id="nav-tab-track">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"/>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                    </svg>
+                    <span>Track Status</span>
+                </li>
+
+                <li class="nav-tab-item" data-tab="tab-history" id="nav-tab-history">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                        <line x1="16" y1="13" x2="8" y2="13"/>
+                        <line x1="16" y1="17" x2="8" y2="17"/>
+                    </svg>
+                    <span>My Complaints</span>
+                    <span class="tab-badge" id="my-complaints-count">0</span>
+                </li>
+            </ul>
+
+            <div style="margin-top: 2rem; padding: 1rem; background: var(--primary-light); border-radius: var(--radius-md); font-size: 0.8rem; color: var(--text-secondary); line-height: 1.5;">
+                <strong style="color: var(--primary); display: block; margin-bottom: 0.25rem;">Privacy Guarantee:</strong>
+                Your complaints are published without names or email identifiers. Administrators only receive category, location, and issue description.
+            </div>
+        </aside>
+
+        <!-- Main Content Panels -->
+        <section class="student-content">
+
+            <!-- TAB 1: Submit Anonymous Complaint -->
+            <div class="tab-panel active" id="tab-submit">
+                <div class="panel-header">
+                    <h2>Submit Anonymous Complaint</h2>
+                    <p>Report hostel or mess issues directly to the administration. Your identity remains protected.</p>
+                </div>
+
+                <div class="form-card">
+                    <form id="complaint-form" onsubmit="handleComplaintSubmit(event)">
+                        <!-- Category Selection -->
+                        <div class="form-group">
+                            <label class="form-label">
+                                Problem Category <span style="color: #EF4444;">*</span>
+                                <small>(Select the appropriate department)</small>
+                            </label>
+                            <div class="category-grid" id="category-grid-container">
+                                <!-- Populated dynamically by JS from backend enums -->
+                            </div>
+                            <input type="hidden" id="selected-category" required>
+                        </div>
+
+                        <!-- Location / Type Selection -->
+                        <div class="form-group">
+                            <label for="complaint-type" class="form-label">
+                                Hostel / Location Block <span style="color: #EF4444;">*</span>
+                            </label>
+                            <select id="complaint-type" class="form-control" required>
+                                <option value="">Select Hostel Block or Location...</option>
+                                <!-- Populated dynamically from CONFIG.COMPLAINT_TYPES -->
+                            </select>
+                            <div class="form-hint">
+                                <span>Specific block, room wing, or dining hall</span>
+                            </div>
+                        </div>
+
+                        <!-- Specific Room / Sub-location (Optional helper) -->
+                        <div class="form-group">
+                            <label for="location-detail" class="form-label">
+                                Specific Area or Room Number <small>(Optional)</small>
+                            </label>
+                            <input type="text" id="location-detail" class="form-control" placeholder="e.g. Room 204, 2nd Floor Washroom, Mess Counter 3">
+                        </div>
+
+                        <!-- Description -->
+                        <div class="form-group">
+                            <label for="complaint-desc" class="form-label">
+                                Issue Description <span style="color: #EF4444;">*</span>
+                                <small>(Minimum 10 characters required by backend)</small>
+                            </label>
+                            <textarea id="complaint-desc" class="form-control" placeholder="Please provide clear details regarding the problem..." required minlength="10" oninput="updateCharCount()"></textarea>
+                            <div class="form-hint">
+                                <span id="category-guidance-hint">Describe what happened and how long it has persisted.</span>
+                                <span id="char-counter"><span id="current-chars">0</span> / 10 min</span>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="requested-resolution-hours" class="form-label">
+                                Requested Resolution Time <span style="color: #EF4444;">*</span>
+                            </label>
+                            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                <input type="number" id="requested-resolution-hours" class="form-control" min="1" step="1" placeholder="e.g. 3" required style="max-width: 160px;">
+                                <span>hours from submission</span>
+                            </div>
+                            <small class="form-hint">Choose a reasonable time based on the issue, such as 3 hours for a water outage. This is your requested deadline for administration.</small>
+                        </div>
+
+                        <!-- Category-Aware Evidence Upload Section -->
+                        <div class="form-group" id="evidence-section">
+                            <label class="form-label">
+                                Photo Proof / Evidence
+                                <small id="evidence-requirement-label">(Recommended for physical issues)</small>
+                            </label>
+                            <div class="evidence-dropzone" id="evidence-dropzone" onclick="document.getElementById('evidence-file-input').click()">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                                    <circle cx="12" cy="13" r="4"/>
+                                </svg>
+                                <p><strong>Click to browse</strong> or drag &amp; drop photos here</p>
+                                <small>PNG, JPG up to 5MB (Simulated evidence storage)</small>
+                            </div>
+                            <input type="file" id="evidence-file-input" accept="image/*" style="display: none;" onchange="handleEvidenceSelect(event)">
+                            <div class="evidence-preview-container" id="evidence-previews"></div>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 2rem;">
+                            <button type="reset" class="btn btn-secondary" onclick="resetFormState()">Clear Form</button>
+                            <button type="submit" class="btn btn-primary btn-lg" id="submit-complaint-btn">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="22" y1="2" x2="11" y2="13"/>
+                                    <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                                </svg>
+                                Submit Grievance
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- TAB 2: Live Tracking & Status -->
+            <div class="tab-panel" id="tab-track">
+                <div class="panel-header">
+                    <h2>Complaint Tracker &amp; Confirmation</h2>
+                    <p>Enter your anonymous tracking reference to review live resolution progress.</p>
+                </div>
+
+                <div class="card" style="margin-bottom: 2rem;">
+                    <div style="display: flex; gap: 0.75rem; align-items: center;">
+                        <input type="text" id="track-search-input" class="form-control" placeholder="Paste your Tracking ID (UUID)..." style="font-family: monospace;">
+                        <button class="btn btn-primary" id="track-search-btn" onclick="executeTrackingSearch()">
+                            Search Status
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tracking Details Card (Populated after search) -->
+                <div id="tracking-details-card" style="display: none;">
+                    <div class="timeline-card">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+                            <div>
+                                <span class="section-tag" id="track-badge-category">CATEGORY</span>
+                                <h3 id="track-type-title" style="font-size: 1.5rem; margin-top: 0.25rem;">Hostel Issue</h3>
+                                <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.25rem;">
+                                    Tracking ID: <code id="track-full-id" style="color: var(--primary); font-weight: 600;">-</code>
+                                    <button class="btn btn-sm btn-secondary" style="margin-left: 0.5rem; padding: 0.15rem 0.4rem;" onclick="UI.copyToClipboard(document.getElementById('track-full-id').innerText)">Copy</button>
+                                </p>
+                            </div>
+                            <div id="track-status-pill"></div>
+                        </div>
+
+                        <!-- Stepper Progress Bar -->
+                        <div class="stepper">
+                            <div class="stepper-step completed" id="step-1">
+                                <div class="step-circle">1</div>
+                                <span class="step-label">Submitted</span>
+                            </div>
+                            <div class="stepper-step" id="step-2">
+                                <div class="step-circle">2</div>
+                                <span class="step-label">In Review</span>
+                            </div>
+                            <div class="stepper-step" id="step-3">
+                                <div class="step-circle">3</div>
+                                <span class="step-label">In Progress</span>
+                            </div>
+                            <div class="stepper-step" id="step-4">
+                                <div class="step-circle">4</div>
+                                <span class="step-label">Resolved</span>
+                            </div>
+                            <div class="stepper-step" id="step-5">
+                                <div class="step-circle">5</div>
+                                <span class="step-label">Closed</span>
+                            </div>
+                        </div>
+
+                        <!-- Issue Details Box -->
+                        <div style="background: var(--bg-subtle); padding: 1.25rem; border-radius: var(--radius-md); margin-bottom: 1.5rem;">
+                            <h4 style="font-size: 0.95rem; margin-bottom: 0.5rem;">Complaint Narrative</h4>
+                            <p id="track-narrative" style="color: var(--text-secondary); font-size: 0.95rem; line-height: 1.6; white-space: pre-wrap;"></p>
+                        </div>
+
+                        <!-- Student Confirmation Panel (Shows when status is RESOLVED) -->
+                        <div class="resolution-box" id="student-resolution-box" style="display: none;">
+                            <h4>
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                                    <polyline points="22 4 12 14.01 9 11.01"/>
+                                </svg>
+                                Action Marked Resolved by Administration
+                            </h4>
+                            <p>The hostel warden / maintenance staff has reported that this issue is resolved. Please verify if the problem has actually been fixed in your premises:</p>
+                            
+                            <div class="resolution-actions">
+                                <button class="btn btn-primary" onclick="confirmResolution(true)">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="20 6 9 17 4 12"/>
+                                    </svg>
+                                    YES &mdash; Problem Solved (Close Issue)
+                                </button>
+                                <button class="btn btn-danger" onclick="confirmResolution(false)">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <line x1="18" y1="6" x2="6" y2="18"/>
+                                        <line x1="6" y1="6" x2="18" y2="18"/>
+                                    </svg>
+                                    NO &mdash; Not Fixed (Reopen &amp; Escalate)
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="tracking-empty-state" style="text-align: center; padding: 4rem 1rem; color: var(--text-muted);">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#CBD5E1" stroke-width="1.5" style="margin-bottom: 1rem;">
+                        <circle cx="11" cy="11" r="8"/>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                    </svg>
+                    <h3>No Tracking Record Selected</h3>
+                    <p style="font-size: 0.95rem; margin-top: 0.5rem;">Enter a Tracking ID above or pick a complaint from your local history.</p>
+                </div>
+            </div>
+
+            <!-- TAB 3: My Complaints History -->
+            <div class="tab-panel" id="tab-history">
+                <div class="panel-header">
+                    <h2>My Complaints History</h2>
+                    <p>Locally stored on this browser for your convenience. Preserves total anonymity with zero backend account linkage.</p>
+                </div>
+
+                <div class="card" style="padding: 0; overflow-x: auto;">
+                    <table class="history-table" id="history-table">
+                        <thead>
+                            <tr>
+                                <th>Tracking ID</th>
+                                <th>Category</th>
+                                <th>Location</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-table-body">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Student Verification Modal -->
+    <div id="auth-modal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); z-index: 1000; align-items: center; justify-content: center; padding: 1rem;">
+        <div class="card" style="max-width: 440px; width: 100%; box-shadow: var(--shadow-xl);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+                <h3 style="font-size: 1.25rem;">Student Identity Verification</h3>
+                <button onclick="closeAuthModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-muted);">&times;</button>
+            </div>
+            <p style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 1.5rem;">
+                Enter your official college email address to verify genuine student enrollment. Your email is <strong>never</strong> published with your complaints.
+            </p>
+
+            <form onsubmit="handleAuthSubmit(event)">
+                <div class="form-group">
+                    <label class="form-label">College Email Address</label>
+                    <input type="email" id="auth-email-input" class="form-control" placeholder="student.roll@college.edu" required>
+                    <small style="color: var(--text-muted); font-size: 0.75rem; margin-top: 0.25rem; display: block;">Format: roll_number@college.edu</small>
+                </div>
+
+                <div class="form-group" id="otp-group" style="display: none;">
+                    <label class="form-label">Verification OTP</label>
+                    <input type="text" id="auth-otp-input" class="form-control" placeholder="Enter 6-digit OTP (e.g. 123456)" maxlength="6">
+                    <small style="color: var(--primary); font-size: 0.75rem; margin-top: 0.25rem; display: block;">Simulated OTP sent: <strong>123456</strong></small>
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem;">
+                    <button type="button" class="btn btn-secondary" onclick="closeAuthModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="auth-submit-btn">Verify Identity</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Scripts -->
+    <script src="js/config.js"></script>
+    <script src="js/ui-utils.js"></script>
+    <script src="js/api.js?v=resolution-time-1"></script>
+    <script src="js/student.js?v=resolution-time-1"></script>
+</body>
+</html>

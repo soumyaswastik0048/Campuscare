@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="CampusCare Admin Portal - Centralized Grievance Management, Resolution Tracking & Real-Time Analytics">
+    <title>CampusCare | Administration Dashboard</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <!-- CSS -->
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+
+    <!-- Header Navigation -->
+    <header class="header-nav">
+        <div class="nav-container">
+            <a href="index.html" class="brand-logo">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+                <span>CampusCare</span>
+                <span class="brand-badge" style="background: #FEF3C7; color: #B45309;">Warden &amp; Admin Desk</span>
+            </a>
+
+            <div class="nav-cta">
+                <div id="admin-auth-container" style="display: flex; align-items: center; gap: 0.75rem;">
+                    <!-- Admin status populated dynamically -->
+                </div>
+                <button class="btn btn-secondary btn-sm" id="admin-refresh-btn" onclick="loadAllComplaints(true)">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="23 4 23 10 17 10"/>
+                        <polyline points="1 20 1 14 7 14"/>
+                        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                    </svg>
+                    Refresh Data
+                </button>
+                <a href="student.html" class="btn btn-outline btn-sm">Student View</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Admin Dashboard -->
+    <main class="admin-layout" id="admin-main-view">
+        <!-- View Toggle & Heading -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+            <div>
+                <h1 style="font-size: 1.85rem; font-weight: 700;">Grievance Control Center</h1>
+                <p style="color: var(--text-muted); font-size: 0.95rem;">Monitor anonymous student complaints, update resolution status, and inspect recurring problems.</p>
+            </div>
+
+            <div style="display: flex; background: #E2E8F0; padding: 0.25rem; border-radius: var(--radius-md);">
+                <button class="btn btn-sm" id="btn-tab-table" style="background: #FFFFFF; color: var(--text-primary);" onclick="switchAdminTab('table')">
+                    Complaints List
+                </button>
+                <button class="btn btn-sm" id="btn-tab-analytics" style="background: transparent; color: var(--text-muted);" onclick="switchAdminTab('analytics')">
+                    Real-Time Analytics
+                </button>
+            </div>
+        </div>
+
+        <section class="reminder-center" id="complaint-reminder-center" aria-live="polite" style="display: none;">
+            <div class="reminder-center-header">
+                <div>
+                    <h2>Complaint Reminders <span class="reminder-count" id="complaint-reminder-count">0</span></h2>
+                    <p>Reminders appear at 75% of the requested time, at the deadline, and every 30 minutes overdue until the complaint is resolved or closed. Keep this dashboard open; enable browser alerts for background notifications.</p>
+                </div>
+                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                    <button type="button" class="btn btn-sm btn-secondary" id="enable-browser-reminders-btn" onclick="enableBrowserComplaintReminders()">Enable browser alerts</button>
+                    <button type="button" class="btn btn-sm btn-secondary" onclick="markAllComplaintRemindersRead()">Mark all read</button>
+                </div>
+            </div>
+            <div class="reminder-list" id="complaint-reminder-list"></div>
+        </section>
+
+        <!-- KPI Metrics Cards Grid -->
+        <section class="kpi-grid">
+            <div class="kpi-card kpi-total">
+                <div class="kpi-header">
+                    <span class="kpi-label">Total Grievances</span>
+                    <div class="kpi-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                        </svg>
+                    </div>
+                </div>
+                <div class="kpi-value" id="kpi-total-val">0</div>
+                <div class="kpi-trend">All records in backend</div>
+            </div>
+
+            <div class="kpi-card kpi-pending">
+                <div class="kpi-header">
+                    <span class="kpi-label">Pending Action</span>
+                    <div class="kpi-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <line x1="12" y1="8" x2="12" y2="12"/>
+                            <line x1="12" y1="16" x2="12.01" y2="16"/>
+                        </svg>
+                    </div>
+                </div>
+                <div class="kpi-value" id="kpi-pending-val" style="color: var(--status-pending);">0</div>
+                <div class="kpi-trend">Awaiting initial review</div>
+            </div>
+
+            <div class="kpi-card kpi-progress">
+                <div class="kpi-header">
+                    <span class="kpi-label">In Progress</span>
+                    <div class="kpi-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="23 4 23 10 17 10"/>
+                            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+                        </svg>
+                    </div>
+                </div>
+                <div class="kpi-value" id="kpi-progress-val" style="color: var(--status-progress);">0</div>
+                <div class="kpi-trend">Under active remediation</div>
+            </div>
+
+            <div class="kpi-card kpi-resolved">
+                <div class="kpi-header">
+                    <span class="kpi-label">Resolved / Closed</span>
+                    <div class="kpi-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                            <polyline points="22 4 12 14.01 9 11.01"/>
+                        </svg>
+                    </div>
+                </div>
+                <div class="kpi-value" id="kpi-resolved-val" style="color: var(--status-resolved);">0</div>
+                <div class="kpi-trend">Successfully fixed</div>
+            </div>
+
+            <div class="kpi-card kpi-overdue">
+                <div class="kpi-header">
+                    <span class="kpi-label">Past Requested Deadline</span>
+                    <div class="kpi-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <polyline points="12 6 12 12 14 14"/>
+                        </svg>
+                    </div>
+                </div>
+                <div class="kpi-value" id="kpi-overdue-val" style="color: #DC2626;">0</div>
+                <div class="kpi-trend">Student-requested time exceeded</div>
+            </div>
+
+            <div class="kpi-card kpi-flagged">
+                <div class="kpi-header">
+                    <span class="kpi-label">Flagged For Review</span>
+                    <div class="kpi-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                        </svg>
+                    </div>
+                </div>
+                <div class="kpi-value" id="kpi-flagged-val" style="color: #B45309;">0</div>
+                <div class="kpi-trend">Potential duplicate/spam</div>
+            </div>
+        </section>
+
+        <!-- VIEW 1: Complaints Table & Filters -->
+        <section id="admin-view-table">
+            <!-- Filter & Search Toolbar -->
+            <div class="filter-bar">
+                <div class="filter-group">
+                    <input type="text" id="admin-search-input" class="filter-input" placeholder="Search description, tracking ID, or room..." oninput="applyFilters()">
+
+                    <select id="filter-category-select" class="filter-select" onchange="applyFilters()">
+                        <option value="ALL">All Categories</option>
+                        <!-- Populated dynamically -->
+                    </select>
+
+                    <select id="filter-status-select" class="filter-select" onchange="applyFilters()">
+                        <option value="ALL">All Statuses</option>
+                        <option value="PENDING">Pending</option>
+                        <option value="IN_PROGRESS">In Progress</option>
+                        <option value="RESOLVED">Resolved</option>
+                        <option value="CLOSED">Closed</option>
+                        <option value="REOPENED">Reopened</option>
+                    </select>
+
+                    <select id="filter-location-select" class="filter-select" onchange="applyFilters()">
+                        <option value="ALL">All Locations</option>
+                    </select>
+                </div>
+
+                <div style="display: flex; gap: 1rem; align-items: center; font-size: 0.85rem;">
+                    <label style="display: flex; align-items: center; gap: 0.4rem; cursor: pointer;">
+                        <input type="checkbox" id="filter-overdue-only" onchange="applyFilters()">
+                        <span>Overdue Only</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 0.4rem; cursor: pointer;">
+                        <input type="checkbox" id="filter-flagged-only" onchange="applyFilters()">
+                        <span>Flagged for Review</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Complaints Table -->
+            <div class="table-card">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Ref ID</th>
+                            <th>Category</th>
+                            <th>Hostel / Location</th>
+                            <th>Description</th>
+                            <th>Similar Issues</th>
+                            <th>Validation Status</th>
+                            <th>Current Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="admin-table-body">
+                        <!-- Populated dynamically -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- VIEW 2: Real-Time Analytics -->
+        <section id="admin-view-analytics" style="display: none;">
+            <div class="analytics-grid">
+                <!-- Complaints by Category -->
+                <div class="chart-card">
+                    <h3 style="font-size: 1.15rem; margin-bottom: 1.25rem;">Complaints by Category</h3>
+                    <div id="analytics-categories-container">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+
+                <!-- Complaints by Location -->
+                <div class="chart-card">
+                    <h3 style="font-size: 1.15rem; margin-bottom: 1.25rem;">Complaints by Hostel / Location</h3>
+                    <div id="analytics-locations-container">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+
+                <!-- Status Distribution -->
+                <div class="chart-card">
+                    <h3 style="font-size: 1.15rem; margin-bottom: 1.25rem;">Status Distribution</h3>
+                    <div id="analytics-statuses-container">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Complaint Detail Drawer -->
+    <div class="drawer-overlay" id="detail-drawer" onclick="if(event.target === this) closeDrawer()">
+        <div class="drawer-panel">
+            <div class="drawer-header">
+                <div>
+                    <span class="section-tag" id="drawer-category-tag">CATEGORY</span>
+                    <h3 id="drawer-title" style="font-size: 1.35rem; margin-top: 0.25rem;">Complaint Inspection</h3>
+                </div>
+                <button onclick="closeDrawer()" class="toast-close" style="font-size: 1.75rem;">&times;</button>
+            </div>
+
+            <div class="drawer-body">
+                <!-- Anonymity Banner -->
+                <div style="background: var(--primary-light); border: 1px solid rgba(79, 70, 229, 0.2); border-radius: var(--radius-md); padding: 0.875rem 1rem; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.75rem;">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" style="flex-shrink: 0;">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                    </svg>
+                    <small style="color: var(--text-primary); font-size: 0.8rem; line-height: 1.4;">
+                        <strong>Anonymity Preserved:</strong> Student identity is securely decoupled. Tracking UUID is the sole identifier.
+                    </small>
+                </div>
+
+                <!-- Identification Info -->
+                <div class="detail-section">
+                    <span class="detail-label">Tracking UUID</span>
+                    <div style="display: flex; gap: 0.5rem; align-items: center;">
+                        <code id="drawer-tracking-id" style="font-size: 0.85rem; color: var(--primary); font-weight: 600; word-break: break-all;">-</code>
+                        <button class="btn btn-sm btn-secondary" onclick="UI.copyToClipboard(document.getElementById('drawer-tracking-id').innerText)">Copy</button>
+                    </div>
+                </div>
+
+                <!-- Location & Type -->
+                <div class="detail-section">
+                    <span class="detail-label">Hostel Block / Location</span>
+                    <div class="detail-box" id="drawer-location">-</div>
+                </div>
+
+                <!-- Description -->
+                <div class="detail-section">
+                    <span class="detail-label">Complaint Narrative</span>
+                    <div class="detail-box" id="drawer-description" style="white-space: pre-wrap;">-</div>
+                </div>
+
+                <!-- Student Evidence Photo -->
+                <div class="detail-section" id="drawer-evidence-section" style="display: none;">
+                    <span class="detail-label">Student Evidence Photo</span>
+                    <div class="detail-box" style="padding: 0.75rem;">
+                        <img id="drawer-evidence-image" alt="Complaint evidence" style="max-width: 100%; max-height: 300px; border-radius: 12px; display: block; margin: 0 auto; border: 1px solid var(--border-color); background: #F8FAFC;" />
+                        <div id="drawer-evidence-meta" style="margin-top: 0.5rem; color: var(--text-muted); font-size: 0.8rem;"></div>
+                    </div>
+                </div>
+
+                <!-- Smart Accountability & Escalation Info -->
+                <div class="detail-section" style="background: #F8FAFC; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1rem;">
+                    <span class="detail-label">Accountability &amp; Escalation Tracker</span>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-top: 0.5rem; font-size: 0.85rem;">
+                        <div>
+                            <span style="color: var(--text-muted); display: block;">Assigned Authority:</span>
+                            <strong id="drawer-authority">Warden Desk / Maintenance Wing</strong>
+                        </div>
+                        <div>
+                            <span style="color: var(--text-muted); display: block;">Student-Requested Resolution Time:</span>
+                            <strong id="drawer-sla">-</strong>
+                            <span style="color: var(--text-muted); display: block; margin-top: 0.5rem;">Requested Due Time:</span>
+                            <strong id="drawer-sla-due">-</strong>
+                            <span id="drawer-sla-remaining" style="display: block; margin-top: 0.25rem; font-size: 0.8rem; color: var(--text-muted);"></span>
+                        </div>
+                        <div>
+                            <span style="color: var(--text-muted); display: block;">Current Escalation:</span>
+                            <span id="drawer-escalation-badge">Normal</span>
+                        </div>
+                        <div>
+                            <span style="color: var(--text-muted); display: block;">Audit / Heuristic Flag:</span>
+                            <span id="drawer-suspicion-badge">Normal</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Similar Complaints Cluster -->
+                <div class="detail-section" id="drawer-similar-cluster" style="display: none;">
+                    <span class="detail-label">Similar Reports in This Facility</span>
+                    <div style="padding: 0.75rem; background: #FAF5FF; border: 1px solid #E9D5FF; border-radius: var(--radius-md); font-size: 0.85rem; color: #6B21A8;" id="drawer-similar-summary">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+
+                <!-- Status Update Section -->
+                <div class="detail-section" style="border-top: 1px solid var(--border-color); padding-top: 1.25rem;">
+                    <span class="detail-label">Update Grievance Status</span>
+                    <div class="form-group" style="margin-bottom: 1rem;">
+                        <select id="drawer-status-select" class="form-control" style="font-weight: 600;">
+                            <option value="PENDING">PENDING (Awaiting Action)</option>
+                            <option value="IN_PROGRESS">IN_PROGRESS (Under Active Remediation)</option>
+                            <option value="RESOLVED">RESOLVED (Remediation Complete, Awaiting Student Verification)</option>
+                            <option value="CLOSED">CLOSED (Confirmed Solved)</option>
+                            <option value="REOPENED">REOPENED (Student Reported Unresolved)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 1rem;">
+                        <label class="form-label">
+                            Resolution Action Note <small>(Visible in timeline)</small>
+                        </label>
+                        <textarea id="drawer-resolution-note" class="form-control" placeholder="Detail the corrective actions taken by technicians or wardens..." style="min-height: 80px;"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            Resolution Proof Attachment <small>(Simulated upload)</small>
+                        </label>
+                        <input type="file" id="drawer-proof-file" class="form-control" accept="image/*">
+                    </div>
+                </div>
+            </div>
+
+            <div class="drawer-footer">
+                <button class="btn btn-danger btn-sm" onclick="handleDeleteComplaint()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="3 6 5 6 21 6"/>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                    </svg>
+                    Delete Record
+                </button>
+                <div style="display: flex; gap: 0.75rem;">
+                    <button class="btn btn-secondary btn-sm" onclick="closeDrawer()">Cancel</button>
+                    <button class="btn btn-primary btn-sm" id="drawer-save-btn" onclick="handleSaveComplaint()">
+                        Save Status
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Login Modal -->
+    <div id="admin-login-modal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(5px); z-index: 2000; align-items: center; justify-content: center; padding: 1rem;">
+        <div class="card" style="max-width: 420px; width: 100%; box-shadow: var(--shadow-xl);">
+            <div style="text-align: center; margin-bottom: 1.5rem;">
+                <div class="card-icon" style="margin: 0 auto 1rem;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                    </svg>
+                </div>
+                <h3 style="font-size: 1.35rem;">CampusCare Administration</h3>
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.25rem;">Authorized Hostel &amp; Mess Staff Only</p>
+            </div>
+
+            <form onsubmit="handleAdminLogin(event)">
+                <div class="form-group">
+                    <label class="form-label">Admin Username</label>
+                    <input type="text" id="admin-user-input" class="form-control" value="admin" required placeholder="admin">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input type="password" id="admin-pass-input" class="form-control" value="admin123" required placeholder="••••••••">
+                    <small style="color: var(--text-muted); font-size: 0.75rem; margin-top: 0.25rem; display: block;">Default test credential: <code>admin</code> / <code>admin123</code></small>
+                </div>
+
+                <div style="margin-top: 1.5rem;">
+                    <button type="submit" class="btn btn-primary" style="width: 100%;" id="admin-login-submit-btn">
+                        Authenticate &amp; Access Dashboard
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Scripts -->
+    <script src="js/config.js"></script>
+    <script src="js/ui-utils.js"></script>
+    <script src="js/api.js?v=resolution-time-1"></script>
+    <script src="js/admin.js?v=complaints-response-5"></script>
+</body>
+</html>
